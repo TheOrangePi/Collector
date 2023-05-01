@@ -27,9 +27,9 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 const library : Library = new Library();
-library.AddCollection("My Fav Movies");
-library.AddCollection("Cool Books");
-library.AddCollection("Awesome Boardgames")
+library.AddCollection({name: "My Fav Movies", description: "A List of really Good Movies that we should watch"});
+library.AddCollection({name: "Cool Books", description:"......"});
+library.AddCollection({name: "Awesome Boardgames", description:"Need to find the time to play these"})
 let collections = library.GetCollections();
 let i = 0;
 Array.from(collections).map(([id, collection] )=> {

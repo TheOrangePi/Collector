@@ -123,12 +123,34 @@ export default function CLibraryDoor() {
         }
     }
 
-    function handleAddCollection(name: string, onValidate: Function){
-        window.library.CRUDLibrary(Operation.CREATE, name).then((response: any) => {
+    function handleAddCollection(name: string, description: string, onValidate: Function){
+        window.library.CRUDLibrary(Operation.CREATE, {name:name, description:description}).then((response: any) => {
             if(response.success){
                 let newCollections : Map<string, ICollection> = new Map(collections);
                 let addedCollection : ICollection = response.collection;
                 newCollections.set(addedCollection.id, addedCollection);
+                setCollections(newCollections);
+                onValidate(true);
+            }else {
+                onValidate(false); 
+            }         
+        });
+    }
+
+    function handleRemoveCollection(id: string) {
+        let newCollections : Map<string, ICollection> = new Map(collections);
+        newCollections.delete(id);
+        setCollections(newCollections);
+        window.library.CRUDLibrary(Operation.DELETE, id);
+    }
+
+    function handleEditCollection(id: string, name:string, description: string, onValidate: Function) {
+        window.library.CRUDLibrary(Operation.UPDATE, {id:id, name:name, description:description}).then((response: any) => {
+            console.log(response);
+            if(response.success){
+                let newCollections : Map<string, ICollection> = new Map(collections);
+                let updatedCollection : ICollection = response.collection;
+                newCollections.set(updatedCollection.id, updatedCollection);
                 setCollections(newCollections);
                 onValidate(true);
             }else {
@@ -169,7 +191,7 @@ export default function CLibraryDoor() {
             component = <CShelf collection={collection} onChangeLocation={handleChangeLocation}/>
             break;
         case View.LIBRARY:
-            component = <CLibrary collections={collections} onChangeLocation={handleChangeLocation} onAddCollection={handleAddCollection}/>
+            component = <CLibrary collections={collections} onChangeLocation={handleChangeLocation} onAddCollection={handleAddCollection} onRemoveCollection={handleRemoveCollection} onEditCollection={handleEditCollection}/>
             break;
         case View.ERROR:
             component = <CError message={error}/>

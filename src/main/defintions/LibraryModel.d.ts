@@ -9,6 +9,7 @@ export interface IItemIdentity {
 
 export interface ICollection {
     name: string
+    description: string
     id: string
     items: Map<string, IItemIdentity>  
 }

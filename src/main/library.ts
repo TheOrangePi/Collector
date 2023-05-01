@@ -14,11 +14,13 @@ class Item implements IItemIdentity {
 
 class Collection implements ICollection {
     name: string;
+    description: string;
     id: string;
     items: Map<string, IItemIdentity>;
 
-    constructor(name: string, id: string) {
+    constructor(name: string, description: string, id: string) {
         this.name = name;
+        this.description = description;
         this.id = id;
         this.items = new Map();
     }
@@ -60,12 +62,12 @@ export class Library implements ILibrary{
         }
     }
 
-    AddCollection(name: string ): {success: boolean, collection: ICollection | undefined} {
+    AddCollection({name, description}:{name: string, description: string} ): {success: boolean, collection: ICollection | undefined} {
        let id = nanoid();
        if(this.nameIdPairs.get(name.toLowerCase())){
             return{success: false, collection: undefined};
        }
-       let collection = new Collection(name, id);
+       let collection = new Collection(name, description, id);
        this.collections.set(id, collection);
        this.nameIdPairs.set(name.toLowerCase(), id);
        return{success: true, collection: this.collections.get(id)}
@@ -75,19 +77,23 @@ export class Library implements ILibrary{
         return this.collections;
     }
 
-    UpdateCollection({id, newName} : {id:string, newName:string | undefined, newItems:Map<string, Item>|undefined}): {success: boolean, collection: ICollection | undefined} {
+    UpdateCollection({id, name, description} : {id:string, name:string | undefined, description: string |undefined}): {success: boolean, collection: ICollection | undefined} {
         let collection = this.collections.get(id);
         if(collection == undefined){
             return {success:false, collection: undefined}
         }
-        if(newName !== undefined){
-            if(this.nameIdPairs.get(newName.toLowerCase())){
+        if(name !== undefined){
+            let otherID =this.nameIdPairs.get(name.toLowerCase())
+            if( otherID !== undefined && otherID !== id){
                 return{success: false, collection: undefined};
             }
             let oldName = collection.name
-            collection.name = newName;
+            collection.name = name;
             this.nameIdPairs.delete(oldName.toLowerCase());
-            this.nameIdPairs.set(newName.toLowerCase(), collection.id);
+            this.nameIdPairs.set(name.toLowerCase(), collection.id);
+        }
+        if(description !== undefined) {
+            collection.description = description;
         }
         return {success:true, collection:collection};
     }
