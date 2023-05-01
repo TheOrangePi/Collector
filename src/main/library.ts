@@ -35,8 +35,8 @@ class Collection implements ICollection {
 export class Library implements ILibrary{
     collections: Map<string, Collection>
     nameIdPairs: Map<string, string>
-    actions: {[event: string] : (arg: any)=> any} = {
-        ["CRUDLibrary"]: ({operation, arg}:{operation: Operation, arg:any})=>this.CRUDLibrary(operation, arg),
+    actions: {[event: string] : (instruction: any)=> any} = {
+        ["CRUDLibrary"]: ({operation, arg}:{operation: Operation, arg:any})=> this.CRUDLibrary(operation, arg),
     };
     constructor(){
         this.collections = new Map();

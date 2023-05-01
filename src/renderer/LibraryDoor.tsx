@@ -99,17 +99,19 @@ export default function CLibraryDoor() {
     const [location, setLocation] =React.useState<{shelf: string | null, book: string | null}>({shelf: null, book: null})
     const [collections, setCollections] = React.useState<Map<string, ICollection>>(new Map());
 
+    //Loading Collections
     React.useEffect(() => {
         setView(View.LOADING);
         window.library.CRUDLibrary(Operation.READ).then((res: any)=>{
             setView(View.LIBRARY);
             setCollections(res);
-            console.log("Loaded");
         }).catch(() =>{
             setView(View.ERROR);
             setError("Couldn't Load Collections");
         });
     }, []);
+
+    //Handlers
     function handleChangeLocation({ shelf, book}: {shelf: string | null, book:string | null}){
         setLocation({shelf, book});
         if(book !== null){
@@ -121,6 +123,21 @@ export default function CLibraryDoor() {
         }
     }
 
+    function handleAddCollection(name: string, onValidate: Function){
+        window.library.CRUDLibrary(Operation.CREATE, name).then((response: any) => {
+            if(response.success){
+                let newCollections : Map<string, ICollection> = new Map(collections);
+                let addedCollection : ICollection = response.collection;
+                newCollections.set(addedCollection.id, addedCollection);
+                setCollections(newCollections);
+                onValidate(true);
+            }else {
+                onValidate(false); 
+            }         
+        });
+    }
+
+    //View Management
     let component;
     switch(view){
         case View.BOOK:
@@ -152,7 +169,7 @@ export default function CLibraryDoor() {
             component = <CShelf collection={collection} onChangeLocation={handleChangeLocation}/>
             break;
         case View.LIBRARY:
-            component = <CLibrary collections={collections} onChangeLocation={handleChangeLocation}/>
+            component = <CLibrary collections={collections} onChangeLocation={handleChangeLocation} onAddCollection={handleAddCollection}/>
             break;
         case View.ERROR:
             component = <CError message={error}/>
@@ -163,13 +180,13 @@ export default function CLibraryDoor() {
     }
 
     return (
-    <>
+    <div className="container">
         <header>
             <h1>The Library</h1>
             <CLibraryMap collections={collections} location={location} onChangeLocation={handleChangeLocation}/>
         </header>
         {component}
-    </>
+    </div>
     )
 }
 

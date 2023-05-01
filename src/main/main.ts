@@ -44,8 +44,8 @@ Array.from(collections).map(([id, collection] )=> {
 // });
 
 Object.entries(library.actions).map(([event, action])=> {
-  ipcMain.handle(event, (event, arg) =>{
-    return action(arg);
+  ipcMain.handle(event, (event, instruction) =>{
+    return action(instruction);
   })
 })
 

@@ -4,7 +4,7 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 import { ICollection} from 'main/defintions/LibraryModel'
 
 contextBridge.exposeInMainWorld('library', {
-  CRUDLibrary: (operation : any, args:any) => ipcRenderer.invoke("CRUDLibrary", {operation, args}),
+  CRUDLibrary: (operation : any, arg:any) => ipcRenderer.invoke("CRUDLibrary", {operation, arg}),
 });
 
 // export type Channels = 'ipc-example';
