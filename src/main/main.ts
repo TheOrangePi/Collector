@@ -14,6 +14,8 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import { Library } from './library';
+import { ICollection } from 'main/defintions/LibraryModel';
 
 class AppUpdater {
   constructor() {
@@ -24,12 +26,41 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
-
-ipcMain.on('ipc-example', async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
+const library : Library = new Library();
+library.AddCollection("My Fav Movies");
+library.AddCollection("Cool Books");
+library.AddCollection("Awesome Boardgames")
+let collections = library.GetCollections();
+let i = 0;
+Array.from(collections).map(([id, collection] )=> {
+  for(let j = 0; j< 15; j++){
+    collection.AddItem(`Item ${i++}`);
+  }
 });
+// ipcMain.on('ipc-example', async (event, arg) => {
+//   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
+//   console.log(msgTemplate(arg));
+//   event.reply('ipc-example', msgTemplate('pong'));
+// });
+
+Object.entries(library.actions).map(([event, action])=> {
+  ipcMain.handle(event, (event, arg) =>{
+    return action(arg);
+  })
+})
+
+// ipcMain.handle("loadCollections", () =>{
+//   return library.GetCollections()
+// });
+// ipcMain.handle("addCollection", (event, name) => {
+//   let collection =  library.AddCollection(name);
+//   console.log(library.GetCollections())
+//   return collection;
+// });
+// ipcMain.handle("removeCollection", (event, id) => {
+//   library.RemoveCollection(id);
+// });
+
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
