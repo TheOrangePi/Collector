@@ -1,10 +1,13 @@
+import { ItemTypes } from "./ItemTypes.e"
 
 
 export interface IItemIdentity {
-    source: string //what database
-    id: string  //the id as it is in that database to retirve it
-    name: string
-   //display img??
+    id: string,
+    name: string,
+    itemType: ItemTypes,
+    year: string,
+    imageURL: string,
+    author: string,
 }
 
 export interface ICollection {

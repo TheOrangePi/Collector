@@ -7,6 +7,7 @@ import CShelf from "./Shelf";
 import CBook from "./Book";
 import { View } from "main/defintions/View.e";
 import {Operation} from "main/defintions/Operations.e"
+import { ItemTypes } from "main/defintions/ItemTypes.e";
 
 // function CItemDisplay({itemIdentity} : {itemIdentity: IItemIdentity}){
 //     return (
@@ -146,7 +147,6 @@ export default function CLibraryDoor() {
 
     function handleEditCollection(id: string, name:string, description: string, onValidate: Function) {
         window.library.CRUDLibrary(Operation.UPDATE, {id:id, name:name, description:description}).then((response: any) => {
-            console.log(response);
             if(response.success){
                 let newCollections : Map<string, ICollection> = new Map(collections);
                 let updatedCollection : ICollection = response.collection;
@@ -157,6 +157,26 @@ export default function CLibraryDoor() {
                 onValidate(false); 
             }         
         });
+    }
+
+    function handleSearch(itemType: ItemTypes, searchTerm: string, onResultsFound: Function) {
+        window.library.SearchLibrary(itemType, searchTerm).then((response: any) => {
+            onResultsFound(response);
+        })
+    }
+
+    function handleAddItem(collectionId :string, itemId : string, itemType : ItemTypes, name:string, imageURL:string, author:string, year:string, onValidate: Function){
+        window.library.CRUDItem(Operation.CREATE, collectionId, {itemId, itemType, name, imageURL, author, year}).then((response:any) => {
+            if(response.success){
+                let newCollections : Map<string, ICollection> = new Map(collections);
+                let addedItemCollection : ICollection = response.collection;
+                newCollections.set(addedItemCollection.id, addedItemCollection);
+                setCollections(newCollections);
+                onValidate(true);
+            }else {
+                onValidate(false); 
+            }         
+        })
     }
 
     //View Management
@@ -188,7 +208,7 @@ export default function CLibraryDoor() {
                 setError(`At Empty Shelf. ${JSON.stringify(location)}`);
                 break;
             }
-            component = <CShelf collection={collection} onChangeLocation={handleChangeLocation}/>
+            component = <CShelf collection={collection} onChangeLocation={handleChangeLocation} onSearch={handleSearch} onAddItem={handleAddItem}/>
             break;
         case View.LIBRARY:
             component = <CLibrary collections={collections} onChangeLocation={handleChangeLocation} onAddCollection={handleAddCollection} onRemoveCollection={handleRemoveCollection} onEditCollection={handleEditCollection}/>

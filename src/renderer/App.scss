@@ -3,6 +3,13 @@
  *        See https://github.com/webpack-contrib/sass-loader#imports
  */
 
+ /* Scrollable Results */
+ .scrollable {
+  max-height: 85%;
+  overflow: hidden;
+  overflow-y: auto;
+}
+
  /*Scrollable Cards*/
  .bookshelf {
   display: grid;

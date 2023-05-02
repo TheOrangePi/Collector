@@ -32,11 +32,11 @@ library.AddCollection({name: "Cool Books", description:"......"});
 library.AddCollection({name: "Awesome Boardgames", description:"Need to find the time to play these"})
 let collections = library.GetCollections();
 let i = 0;
-Array.from(collections).map(([id, collection] )=> {
-  for(let j = 0; j< 15; j++){
-    collection.AddItem(`Item ${i++}`);
-  }
-});
+// Array.from(collections).map(([id, collection] )=> {
+//   for(let j = 0; j< 15; j++){
+//     collection.AddItem(`Item ${i++}`);
+//   }
+// });
 // ipcMain.on('ipc-example', async (event, arg) => {
 //   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
 //   console.log(msgTemplate(arg));

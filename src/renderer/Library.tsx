@@ -106,32 +106,36 @@ function CAddCollectionForm({onAddCollection} : {onAddCollection: Function}){
     }
 
     return (
-        <div>
+        <>
             <button className="btn btn-sm btn-outline-dark" type="button" data-bs-toggle="collapse" data-bs-target="#addCollectionForm" aria-expanded="false" aria-controls="addCollectionForm">
                 Create Collection
             </button>
             <div className="row">
                 <div className="collapse col-md-6" id="addCollectionForm">            
                     <div className="card card-body">
+                        <div className="mb-3">
                         <label htmlFor="collectioName" className="form-label">Collection Name</label>
                         <input type="text" id="collectionName" className="form-control" value={collectionName} onChange={(e) => {setCollectionName(e.target.value); handleNameValidation(undefined)}}></input>
                         <label htmlFor="collectionDescription" className="form-label">Collection Description</label>
                         <textarea id="collectionDescription" className="form-control" value={collectionDescription} onChange={(e) => {setcollectionDescription(e.target.value);}}></textarea>
                         <div className="invalid-feedback">Name Already Exists</div>
+                        </div>
                         <div className="btn-group">
                             <button onClick={() => {onAddCollection(collectionName, collectionDescription, handleNameValidation)}} className="btn btn-sm btn-primary">Add</button>
-                            <button onClick={() => {handleNameValidation(true)}} className="btn btn-sm btn-secondary  col-6 col-md-3 col-lg-2" type="button" data-bs-toggle="collapse" data-bs-target="#addCollectionForm" aria-expanded="false" aria-controls="addCollectionForm">Cancel</button>
+                            <button onClick={() => {handleNameValidation(true)}} className="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#addCollectionForm" aria-expanded="false" aria-controls="addCollectionForm">Cancel</button>
                         </div>
                     </div>
                </div>
             </div>
-        </div>
+        </>
     )
 }
 
 function CItemDisplay({item, shelf, onChangeLocation} : {item: IItemIdentity, shelf: string, onChangeLocation: Function}) {
     return(
-        <div className="card" onClick={()=>{onChangeLocation({shelf: shelf, book:item.id})}}>{item.name} </div>
+        <div className="card" onClick={()=>{onChangeLocation({shelf: shelf, book:item.id})}}>
+            <img src={item.imageURL} className="card-img"/>
+        </div>
         )
 }
 

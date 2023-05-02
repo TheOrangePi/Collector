@@ -1,15 +1,26 @@
 import { ICollection, IItemIdentity, ILibrary } from "main/defintions/LibraryModel"
 import {Operation} from "./defintions/Operations.e"
 import { nanoid } from "nanoid";
+import { ItemTypes } from "./defintions/ItemTypes.e";
+import BookDB from "./bookDB";
+
 class Item implements IItemIdentity {
-    source: string;
     id: string;
     name: string;
-    constructor(name: string, id: string) {
+    itemType: ItemTypes;
+    year: string;
+    imageURL: string;
+    author: string;
+
+    constructor(name: string, id: string, itemType: ItemTypes, imageURL: string, author: string, year:string) {
         this.name = name;
         this.id = id;
-        this.source = "";
+        this.itemType = itemType;
+        this.imageURL = imageURL;
+        this.author = author;
+        this.year = year;
     }
+   
 }
 
 class Collection implements ICollection {
@@ -25,11 +36,12 @@ class Collection implements ICollection {
         this.items = new Map();
     }
 
-    AddItem(name: string) : {success: boolean, item: Item | undefined} {
-        let id = nanoid(); // this needs to be changed?
-        let item = new Item(name, id);
+    AddItem({itemId, itemType, name, imageURL, author, year}: {itemId : string, itemType : ItemTypes, name :string, imageURL :string, author :string, year :string} ) :  boolean {
+        let id = `${itemType}-${itemId}`;
+        if(this.items.has(id)) return true;
+        let item = new Item(name, id, itemType, imageURL, author, year);
         this.items.set(id, item);
-        return{success: true, item: this.items.get(id)}
+        return true;
     }
 
 }
@@ -38,14 +50,49 @@ export class Library implements ILibrary{
     collections: Map<string, Collection>
     nameIdPairs: Map<string, string>
     actions: {[event: string] : (instruction: any)=> any} = {
-        ["CRUDLibrary"]: ({operation, arg}:{operation: Operation, arg:any})=> this.CRUDLibrary(operation, arg),
+        ["CRUDLibrary"]: ({operation, arg}:{operation: Operation, arg:any})=> this.CRUDCollection(operation, arg),
+        ["SearchLibrary"] : ({itemType, searchTerm, onResultsFound} : {itemType: ItemTypes, searchTerm: string, onResultsFound: Function}) => this.SearchLibrary(itemType, searchTerm, onResultsFound),
+        ["CRUDItem"] : ({operation, collectionId, arg}:{operation: Operation, collectionId:string, arg:any})=> this.CRUDItem(operation, collectionId, arg),
     };
+
+    bookDB : BookDB;
+
     constructor(){
         this.collections = new Map();
         this.nameIdPairs = new Map();
+        this.bookDB = new BookDB();
     }
+
+
+    SearchLibrary(itemType: ItemTypes, searchTerm: string , onResultsFound: Function) {
+        let searchTerms : Array<string> = searchTerm.split(' ');
+        switch(itemType){
+            case ItemTypes.BOOK:
+                return this.bookDB.SearchBooks(searchTerms);
+        }
+
+    }
+
+    CRUDItem(operation: Operation, collectionId:string, arg:any) {
+        let collection = this.collections.get(collectionId);
+        if(collection) {
+            let success = undefined
+            switch(operation) {
+                case Operation.CREATE:
+                   return {success: collection.AddItem(arg), collection: collection}
+                case Operation.READ:
+                  return
+                case Operation.UPDATE:
+                    return
+                case Operation.DELETE:
+                    return
+            }
+        } 
+        throw new Error(`collection ${collectionId} does not exist when CRUD Item`)
+    }
+
     
-    CRUDLibrary(operation: Operation, arg:any) {
+    CRUDCollection(operation: Operation, arg:any) {
         switch(operation){
             case Operation.CREATE:
                 return this.AddCollection(arg)
