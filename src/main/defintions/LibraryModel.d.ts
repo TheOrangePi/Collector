@@ -15,9 +15,9 @@ export interface ICollection {
     description: string
     id: string
     items: Map<string, IItemIdentity>  
+    subCollections: Map<string, ICollection>
 }
 
 export interface ILibrary {
-    collections: Map<string, ICollection>
-    nameIdPairs: Map<string, string>
+    masterCollection: ICollection
 }

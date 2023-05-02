@@ -9,103 +9,54 @@ import { View } from "main/defintions/View.e";
 import {Operation} from "main/defintions/Operations.e"
 import { ItemTypes } from "main/defintions/ItemTypes.e";
 
-// function CItemDisplay({itemIdentity} : {itemIdentity: IItemIdentity}){
-//     return (
-//         <p>{itemIdentity.name}</p>
-//     );
-// }
+function FollowPath(collection: ICollection, location: Array<string>, start: number = 0) : ICollection {
+    start++;
+    let next = location[start];
+    let childCollection = collection.subCollections.get(next);
+    if(childCollection == undefined) return collection;
+    if(start >= location.length-1) return childCollection;
+    return FollowPath(childCollection, location, start);
+}
 
-// function CShelf({collection, onRemoveCollection} : ICollectionComponent) {
-//     return (  
-//         <section className="row">
-//             <h2>{collection.name}<button onClick={() => {onRemoveCollection(collection.id)}}>Remove</button></h2> 
-//             {Object.entries(collection.items).map(([id, itemIdentity]) => {
-//                 return (
-//                     <CItemDisplay key={id} itemIdentity={itemIdentity}/>
-//                 )
-//             })}
-//         </section>
-//     );
-// }
-
-// function CCreateCollectionForm({onAddCollection, onCancelCreateCollection} : {onAddCollection: Function, onCancelCreateCollection : Function}){
-//     const [collectionName, setCollectionName] = React.useState('');
-//     return (
-// <div>
-//             <label >Collection Name<input type="text" value={collectionName} onChange={(e) => setCollectionName(e.target.value)}></input></label>
-//             <button onClick={() => {onAddCollection(collectionName)}}>Add</button>
-//             <button onClick={()=> {onCancelCreateCollection()}}>Cancel</button>
-//             </div>
-//     );
-// }
-
-// function CLibraryHeader({onCreateCollection} : ILibraryHeaderComponent) {
-
-//     return (
-//         <header>
-//             <h1>The Library</h1>
-//             <button onClick={()=>{onCreateCollection()}}>Create New Collection</button>
-//         </header>
-//     );
-// }
-
-
-
-
-
-function CLibraryMap({collections, location, onChangeLocation} : {collections: Map<string, ICollection>, location: {shelf: string | null, book: string | null}, onChangeLocation: Function}){
-    let collection = undefined;
-    let item = undefined;
-    if(location.shelf){
-        collection = collections.get(location.shelf);
-        if(location.book){
-            item = collection?.items.get(location.book);
-        }
-    }
-    
-   
+function CLibraryMap({masterCollection, location, onChangeLocation} : {masterCollection: ICollection, location: Array<string>, onChangeLocation: Function}){   
+    let previousCollection = masterCollection;
+    let count = 1
     return(
         <nav className="nav">
             <ol className="breadcrumb" aria-label="breadcrumb">
-            {location.shelf == null || collection == undefined 
-                ? <li className="breadcrumb-item active" aria-current="page"><a>Library</a></li>
-                : location.book == null || item == undefined
-                ? <>
-                    <li className="breadcrumb-item"><a href="#" onClick={()=>{onChangeLocation({shelf: null, book: null})}}>Library</a></li>
-                    <li className="breadcrumb-item active" aria-current="page"><a>{collection.name}</a></li>
-                </> 
-                : <>
-                <li className="breadcrumb-item"><a href="#" onClick={()=>{onChangeLocation({shelf: null, book: null})}}>Library</a></li>
-                <li className="breadcrumb-item"><a href="#" onClick={()=>{onChangeLocation({shelf: location.shelf, book:null})}}>{collection.name}</a></li>	
-                <li className="breadcrumb-item active" aria-current="page"><a>{item.name}</a></li>
-                </>
-            }
+                {location.length > 0 ? <li className="breadcrumb-item active"><a href="#" onClick={()=> {onChangeLocation([masterCollection.id], View.LIBRARY)}}>Library</a></li> : <li className="breadcrumb-item">Library</li>}
+                {location.map((locationId) => {
+                        let nextCollection = previousCollection.subCollections.get(locationId);
+                        count++;
+                        if(nextCollection){
+                            previousCollection = nextCollection;
+                            if(count < location.length -1) return <li key={locationId} className="breadcrumb-item"><a href="#" onClick={()=>{onChangeLocation(location.slice(0, count), View.SHELF)}}>{nextCollection.name}</a></li>
+                            else return <li  key={locationId} className="breadcrumb-item active">{nextCollection.name}</li>
+                        } else {
+                            let item = previousCollection.items.get(locationId);
+                            if(item)return <li  key={locationId} className="breadcrumb-item active">{item.name}</li>
+                        }
+                    })
+                }
             </ol>
         </nav>
     )
 }
 
-
-
-
-
-
-
-
-
-
 export default function CLibraryDoor() {
     const [view, setView] = React.useState(View.LOADING)
     const [error, setError] = React.useState("We've Encountered An Unhandled Error")
-    const [location, setLocation] =React.useState<{shelf: string | null, book: string | null}>({shelf: null, book: null})
-    const [collections, setCollections] = React.useState<Map<string, ICollection>>(new Map());
+    const [location, setLocation] =React.useState<Array<string>>(["0"])
+    let dummy : ICollection = {id: "", name: "", description: "", subCollections: new Map(), items: new Map()}
+    const [masterCollection, setMasterCollection] = React.useState<ICollection>(dummy);
 
     //Loading Collections
     React.useEffect(() => {
         setView(View.LOADING);
-        window.library.CRUDLibrary(Operation.READ).then((res: any)=>{
+        window.library.CRUDLibrary(Operation.READ, "0").then((res: any)=>{
+            setLocation([res.id]);
             setView(View.LIBRARY);
-            setCollections(res);
+            setMasterCollection(res);
         }).catch(() =>{
             setView(View.ERROR);
             setError("Couldn't Load Collections");
@@ -113,45 +64,43 @@ export default function CLibraryDoor() {
     }, []);
 
     //Handlers
-    function handleChangeLocation({ shelf, book}: {shelf: string | null, book:string | null}){
-        setLocation({shelf, book});
-        if(book !== null){
-            setView(View.BOOK);
-        } else if(shelf !== null) {
-            setView(View.SHELF);
-        } else {
-            setView(View.LIBRARY);
-        }
+    function handleChangeLocation(location: Array<string>, view: View){
+        setLocation(location);
+        setView(view);      
     }
 
     function handleAddCollection(name: string, description: string, onValidate: Function){
-        window.library.CRUDLibrary(Operation.CREATE, {name:name, description:description}).then((response: any) => {
-            if(response.success){
-                let newCollections : Map<string, ICollection> = new Map(collections);
-                let addedCollection : ICollection = response.collection;
-                newCollections.set(addedCollection.id, addedCollection);
-                setCollections(newCollections);
+        window.library.CRUDLibrary(Operation.CREATE, location[location.length-1], {name:name, description:description}).then((response: any) => {
+           console.log(response);
+            if(response){
+                let newMaster = Object.assign({}, masterCollection);
+                let currentCollection = FollowPath(newMaster, location);
+                let addedCollection : ICollection = response;
+                currentCollection.subCollections.set(addedCollection.id, addedCollection);
+                setMasterCollection(newMaster);
                 onValidate(true);
             }else {
-                onValidate(false); 
+                onValidate(false);
             }         
         });
     }
 
     function handleRemoveCollection(id: string) {
-        let newCollections : Map<string, ICollection> = new Map(collections);
-        newCollections.delete(id);
-        setCollections(newCollections);
-        window.library.CRUDLibrary(Operation.DELETE, id);
+        let newMaster = Object.assign({}, masterCollection);
+        let currentCollection = FollowPath(newMaster, location)
+        currentCollection.subCollections.delete(id);
+        setMasterCollection(newMaster);
+        window.library.CRUDLibrary(Operation.DELETE,currentCollection.id, id);
     }
 
     function handleEditCollection(id: string, name:string, description: string, onValidate: Function) {
-        window.library.CRUDLibrary(Operation.UPDATE, {id:id, name:name, description:description}).then((response: any) => {
-            if(response.success){
-                let newCollections : Map<string, ICollection> = new Map(collections);
-                let updatedCollection : ICollection = response.collection;
-                newCollections.set(updatedCollection.id, updatedCollection);
-                setCollections(newCollections);
+        window.library.CRUDLibrary(Operation.UPDATE, location[location.length-1], {id:id, name:name, description:description}).then((response: any) => {
+            if(response){
+                let newMaster = Object.assign({}, masterCollection)
+                let currentCollection = FollowPath(newMaster, location)
+                let updatedCollection : ICollection = response;
+                currentCollection?.subCollections.set(updatedCollection.id, updatedCollection);
+                setMasterCollection(newMaster);
                 onValidate(true);
             }else {
                 onValidate(false); 
@@ -167,28 +116,24 @@ export default function CLibraryDoor() {
 
     function handleAddItem(collectionId :string, itemId : string, itemType : ItemTypes, name:string, imageURL:string, author:string, year:string, onValidate: Function){
         window.library.CRUDItem(Operation.CREATE, collectionId, {itemId, itemType, name, imageURL, author, year}).then((response:any) => {
-            if(response.success){
-                let newCollections : Map<string, ICollection> = new Map(collections);
-                let addedItemCollection : ICollection = response.collection;
-                newCollections.set(addedItemCollection.id, addedItemCollection);
-                setCollections(newCollections);
-                onValidate(true);
-            }else {
-                onValidate(false); 
-            }         
+            // if(response.success){
+            //     let newCollections : Map<string, ICollection> = new Map(collections);
+            //     let addedItemCollection : ICollection = response.collection;
+            //     newCollections.set(addedItemCollection.id, addedItemCollection);
+            //     setCollections(newCollections);
+            //     onValidate(true);
+            // }else {
+            //     onValidate(false); 
+            // }         
         })
     }
 
     //View Management
     let component;
+    let currentCollection = FollowPath(masterCollection, location);
     switch(view){
         case View.BOOK:
-            if(location.shelf === null || location.book === null) {
-                setView(View.ERROR);
-                setError(`View Mode Book With No Book Location. ${JSON.stringify(location)}`);
-                break;
-            }
-            let item = collections.get(location.shelf)?.items.get(location.book);
+            let item = currentCollection.items.get(location[location.length-1]);
             if(item == undefined) {
                 setView(View.ERROR);
                 setError(`At Empty Book. ${JSON.stringify(location)}`);
@@ -197,21 +142,15 @@ export default function CLibraryDoor() {
             component = <CBook item={item}/>
             break;
         case View.SHELF:
-            if(location.shelf == null) {
-                setView(View.ERROR);
-                setError(`View Mode Shelf With No Shelf Location. ${JSON.stringify(location)}`);
-                break;
-            }
-            let collection = collections.get(location.shelf);
-            if(collection == undefined) {
-                setView(View.ERROR);
-                setError(`At Empty Shelf. ${JSON.stringify(location)}`);
-                break;
-            }
-            component = <CShelf collection={collection} onChangeLocation={handleChangeLocation} onSearch={handleSearch} onAddItem={handleAddItem}/>
+            component = <CShelf collection={currentCollection} onChangeLocation={handleChangeLocation} location={location} onSearch={handleSearch}onRemoveCollection={handleRemoveCollection} onEditCollection={handleEditCollection} onAddCollection={handleAddCollection} onAddItem={handleAddItem} />
             break;
         case View.LIBRARY:
-            component = <CLibrary collections={collections} onChangeLocation={handleChangeLocation} onAddCollection={handleAddCollection} onRemoveCollection={handleRemoveCollection} onEditCollection={handleEditCollection}/>
+            if(masterCollection == undefined) {
+                setView(View.ERROR);
+                setError(`Libary Master Collection does not exist`);
+                break;
+            }
+            component = <CLibrary masterCollection={masterCollection} location={location} onChangeLocation={handleChangeLocation} onAddCollection={handleAddCollection} onRemoveCollection={handleRemoveCollection} onEditCollection={handleEditCollection}/>
             break;
         case View.ERROR:
             component = <CError message={error}/>
@@ -225,7 +164,9 @@ export default function CLibraryDoor() {
     <div className="container">
         <header>
             <h1>The Library</h1>
-            <CLibraryMap collections={collections} location={location} onChangeLocation={handleChangeLocation}/>
+            {
+                masterCollection ? <CLibraryMap masterCollection={masterCollection} location={location} onChangeLocation={handleChangeLocation}/> : <></>
+            }            
         </header>
         {component}
     </div>
