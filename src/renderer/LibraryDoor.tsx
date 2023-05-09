@@ -68,8 +68,9 @@ export default function CLibraryDoor() {
         setView(view);      
     }
 
-    function handleAddCollection(name: string, description: string, onValidate: Function){
-        window.library.CRUDLibrary(Operation.CREATE, location[location.length-1], {name:name, description:description}).then((response: any) => {
+    function handleAddCollection(id: string|undefined, name: string, description: string, onValidate: Function){
+
+        window.library.CRUDLibrary(Operation.CREATE, location[location.length-1], {id:id, name:name, description:description}).then((response: any) => {
             if(response){
                 console.log(response);
                 let newCollections = new Map(collections);
@@ -86,9 +87,14 @@ export default function CLibraryDoor() {
     function handleRemoveCollection(id: string) {
         window.library.CRUDLibrary(Operation.DELETE, location[location.length-1], id).then((response: any) => {
             if(response){
+                console.log(response)
                 let newCollections = new Map(collections);
                 newCollections.set(response.collection.id, response.collection);
-                setCollections(newCollections);
+                if(response.different.parented <= 0) {
+                    newCollections.delete(response.different.id);
+                } else {
+                    newCollections.set(response.different.id, response.different);
+                }
                 setCollections(newCollections);
             }else {
             }         

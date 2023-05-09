@@ -131,7 +131,7 @@ export class Library implements ILibrary{
                     this.SignalStateChange();
                     break;
                 case Operation.DELETE:
-                    this.RemoveCollection(collectionId, arg);
+                    different = this.RemoveCollection(collectionId, arg);
                     this.SignalStateChange(); 
                     break;              
             }
@@ -142,12 +142,20 @@ export class Library implements ILibrary{
        
     }
 
-    AddCollection(collectionId: string, {name, description}:{name: string, description: string} ): ICollection {
-        let id = nanoid();
-        let collection = new Collection(name, description, id);
-        this.collections.set(id, collection);
+    AddCollection(collectionId: string, {id, name, description}:{id :string |undefined,name: string, description: string} ): ICollection {
+
+        let collection = undefined;
+        if(id !== undefined){ // the collection exists already
+            collection = this.collections.get(id)    
+        }
+        if(id == undefined || collection == undefined){ // must create a new collection
+            id = nanoid();
+            collection = new Collection(name, description, id);
+            this.collections.set(id, collection);
+        }        
+        // enusre the collection is added to its parent collection
+        collection.parented++;
         this.collections.get(collectionId)?.subCollections.push(id);
-        console.log(collection)
         return collection;
      }   
      
@@ -179,9 +187,12 @@ export class Library implements ILibrary{
         let deletedIdArr = collection.subCollections.splice(index,1);
         let deletedId = deletedIdArr[0];
         let deleted = this.collections.get(deletedId);
-        if(deleted && deleted.parented <= 0) {
-            this.collections.delete(deletedId);
+        if(deleted) {
+            deleted.parented--;
+            if(deleted.parented <= 0) this.collections.delete(deletedId);
         }
+
+        return deleted;
 
     }
 
