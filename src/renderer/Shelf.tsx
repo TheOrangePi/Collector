@@ -84,9 +84,10 @@ function CAddItemForm({collection, onSearch, onAddItem}: {collection: ICollectio
                     </ul>
                 </div>
                 <div className="scrollable row">
-                {Array.from(resultItems).map(({id, itemType, title, author, year, imageURL }, index) => {
-                    let existsInCollection = collection.items.has(`${itemType}-${id}`);
-                return <CSearchedItem key={index} existsInCollection={existsInCollection} collectionId={collection.id} itemId={id} itemType={itemType} name={title} imageURL={imageURL} author={author} year={year} onAddItem={onAddItem}/>
+                {resultItems.map(({id, itemType, title, author, year, imageURL }, index) => {
+                    let existsInCollection = collection.items.find((id) => {
+                        return id === `${itemType}-${id}`}) !== undefined;
+                    return <CSearchedItem key={index} existsInCollection={existsInCollection} collectionId={collection.id} itemId={id} itemType={itemType} name={title} imageURL={imageURL} author={author} year={year} onAddItem={onAddItem}/>
             })}
                 </div>
             </div>
@@ -140,20 +141,22 @@ function CAddCollectionForm({onAddCollection} : {onAddCollection: Function}){
 }
 
 
-export default function CShelf({collection, onChangeLocation, location, onSearch, onAddItem, onRemoveCollection, onEditCollection, onAddCollection}: {collection: ICollection, onChangeLocation: Function, location:string[], onSearch: Function, onAddItem: Function, onEditCollection: Function, onRemoveCollection: Function, onAddCollection:Function}) {
+export default function CShelf({collection, collections, items, onChangeLocation, location, onSearch, onAddItem, onRemoveCollection, onEditCollection, onAddCollection}: {collection: ICollection, collections: Map<string, ICollection>, items: Map<string, IItemIdentity>, onChangeLocation: Function, location:string[], onSearch: Function, onAddItem: Function, onEditCollection: Function, onRemoveCollection: Function, onAddCollection:Function}) {
     return (
         <article>
             <CAddCollectionForm onAddCollection={onAddCollection}/>
             <CAddItemForm onAddItem={onAddItem} collection={collection} onSearch={onSearch}/>
             <h2>{collection.name}</h2>
             <div className="row">
-            {Array.from(collection.items).map(([id, item]) => {
-                return <CItemDisplay key={id}  item={item} shelf={collection.id} onChangeLocation={onChangeLocation} location={location}/>
+            {collection.items.map((id) => {
+                let item = items.get(id);
+                if(item) return <CItemDisplay key={id}  item={item} shelf={collection.id} onChangeLocation={onChangeLocation} location={location}/>
             })}
             </div>
             <div className="row">
-            {Array.from(collection.subCollections).map(([id, collection]) => {
-                return <CShelfDisplay key={id}  location={location} collection={collection} onChangeLocation={onChangeLocation} onRemoveCollection={onRemoveCollection} onEditCollection={onEditCollection}/>
+            {collection.subCollections.map((id) => {
+                let collection = collections.get(id);
+                if(collection) return <CShelfDisplay key={id} items={items}  location={location} collection={collection} onChangeLocation={onChangeLocation} onRemoveCollection={onRemoveCollection} onEditCollection={onEditCollection}/>
             })}
             </div>
         </article>

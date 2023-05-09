@@ -20,14 +20,11 @@ export function CItemDisplay({item, onChangeLocation, location} : {item: IItemId
 
 export function CItemSmallDisplay({item, onChangeLocation, location} : {item: IItemIdentity, location: Array<string>, onChangeLocation: Function}) {
     return(
-        <div className="card" onClick={()=>{onChangeLocation([...location, item.id], View.BOOK)}}>
-            <img src={item.imageURL} className="card-img"/>
-        </div>
+            <img src={item.imageURL} className="card-img small" onClick={()=>{onChangeLocation([...location, item.id], View.BOOK)}}/>
         )
 }
 
-export function CShelfDisplay({collection, onChangeLocation, location,  onRemoveCollection, onEditCollection} : {collection: ICollection, onChangeLocation: Function, location:string[], onRemoveCollection: Function, onEditCollection: Function}){
-
+export function CShelfDisplay({collection, items, onChangeLocation, location,  onRemoveCollection, onEditCollection} : {collection: ICollection, items: Map<string, IItemIdentity>, onChangeLocation: Function, location:string[], onRemoveCollection: Function, onEditCollection: Function}) {
     return(
         <section className="card mb-1">
             <div className="card-link-area">
@@ -36,16 +33,17 @@ export function CShelfDisplay({collection, onChangeLocation, location,  onRemove
                     <span className="dropdown">
                         <button className="btn btn-md dropdown-toggle" type="button"  data-bs-toggle="dropdown" aria-expanded="false"/>
                         <ul className="dropdown-menu">
-                        <li><button type="button" className="dropdown-item btn btn-default" data-bs-toggle="modal" data-bs-target={`#${collection.id}-editModal`}>Edit</button></li>
-                        <li><button type="button" className="dropdown-item btn btn-default" data-bs-toggle="modal" data-bs-target={`#${collection.id}-removeModal`}>Remove</button></li>                      
+                        <li><button type="button" className="dropdown-item btn btn-default" data-bs-toggle="modal" data-bs-target={`#e${collection.id}-editModal`}>Edit</button></li>
+                        <li><button type="button" className="dropdown-item btn btn-default" data-bs-toggle="modal" data-bs-target={`#r${collection.id}-removeModal`}>Remove</button></li>                      
                         </ul>
                     </span>
                 </div>   
             </div>
             <div className="card-body d-none d-sm-block">  
                     <div className="bookshelf">       
-                    {Array.from(collection.items).map(([id, item]) => {
-                        return <CItemSmallDisplay key={id}  item={item} location={[...location, collection.id]} onChangeLocation={onChangeLocation}/>
+                    {collection.items.map((id) => {
+                        let item = items.get(id);
+                        if(item) return <CItemSmallDisplay key={id}  item={item} location={[...location, collection.id]} onChangeLocation={onChangeLocation}/>
                     })}
                 </div>                
             </div>
@@ -64,17 +62,15 @@ function CEditForm({collection, onEditCollection} : {collection: ICollection, on
 
     function handleNameValidation(success: boolean | undefined) {
         
-        let collectionNameInput = document.getElementById(`${collection.id}-editCollectionName`);
-        let collectionDescriptionInput = document.getElementById(`${collection.id}-editCollectionDescription`)
+        let collectionNameInput = document.getElementById(`e${collection.id}-editCollectionName`);
+        let collectionDescriptionInput = document.getElementById(`e${collection.id}-editCollectionDescription`)
         if(collectionNameInput && collectionDescriptionInput){
             if(success === false) {
-                console.log("false");
                 collectionNameInput.classList.add("is-invalid");
                 collectionNameInput.classList.remove("is-valid");
                 collectionDescriptionInput.classList.remove("is-valid");
             }
             else if(success === true) {
-                console.log("True")
                 collectionNameInput.classList.remove("is-invalid");
                 collectionNameInput.classList.add("is-valid");
                 collectionDescriptionInput.classList.add("is-valid");
@@ -92,7 +88,7 @@ function CEditForm({collection, onEditCollection} : {collection: ICollection, on
     }
 
     return (
-        <div className="modal fade" id={`${collection.id}-editModal`} data-bs-backdrop="static" data-bs-keyboard="false" tabIndex={-1} aria-labelledby={`${collection.id}-editModalLabel`} aria-hidden="true">
+        <div className="modal fade" id={`e${collection.id}-editModal`} data-bs-backdrop="static" data-bs-keyboard="false" tabIndex={-1} aria-labelledby={`e${collection.id}-editModalLabel`} aria-hidden="true">
             <div className="modal-dialog">
                 <div className="modal-content">
                     <div className="modal-header">
@@ -102,7 +98,7 @@ function CEditForm({collection, onEditCollection} : {collection: ICollection, on
                     <div className="modal-body">
                         <div className="input-group mb-3">
                             <span className="input-group-text" id="basic-addon1">New Name:</span>
-                            <input type="text" id={`${collection.id}-editCollectionName`} className="form-control" value={collectionName} onChange={(e) => {setCollectionName(e.target.value); handleNameValidation(undefined)}} placeholder={collection.name} aria-label="Username" aria-describedby="basic-addon1" required={true}/>
+                            <input type="text" id={`e${collection.id}-editCollectionName`} className="form-control" value={collectionName} onChange={(e) => {setCollectionName(e.target.value); handleNameValidation(undefined)}} placeholder={collection.name} aria-label="Username" aria-describedby="basic-addon1" required={true}/>
                             <div className="invalid-feedback">New Name Already Exists</div>
                         </div>
                         <div className="input-group">
@@ -123,11 +119,11 @@ function CEditForm({collection, onEditCollection} : {collection: ICollection, on
 
 function CConfirmDelete({collection, onRemoveCollection} : {collection: ICollection, onRemoveCollection: Function }) {
     return (
-        <div className="modal fade" id={`${collection.id}-removeModal`} data-bs-backdrop="static" data-bs-keyboard="false" tabIndex={-1} aria-labelledby={`${collection.id}-removeModalLabel`} aria-hidden="true">
+        <div className="modal fade" id={`r${collection.id}-removeModal`} data-bs-backdrop="static" data-bs-keyboard="false" tabIndex={-1} aria-labelledby={`r${collection.id}-removeModalLabel`} aria-hidden="true">
             <div className="modal-dialog">
                 <div className="modal-content">
                     <div className="modal-header">
-                        <h5 className="modal-title" id={`${collection.id}-removeModalLabel`}>Are You Sure?</h5>
+                        <h5 className="modal-title" id={`r${collection.id}-removeModalLabel`}>Are You Sure?</h5>
                         <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div className="modal-body">

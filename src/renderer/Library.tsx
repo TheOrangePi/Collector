@@ -46,14 +46,15 @@ function CAddCollectionForm({onAddCollection} : {onAddCollection: Function}){
     )
 }
 
-export default function CLibrary({masterCollection, onChangeLocation, location, onAddCollection, onRemoveCollection, onEditCollection} : {masterCollection: ICollection, onChangeLocation: Function, location:string[], onAddCollection: Function, onRemoveCollection: Function, onEditCollection: Function}) {
+export default function CLibrary({master, collections, items, onChangeLocation, location, onAddCollection, onRemoveCollection, onEditCollection} : {master: ICollection,collections: Map<string,ICollection>, items: Map<string, IItemIdentity>, onChangeLocation: Function, location:string[], onAddCollection: Function, onRemoveCollection: Function, onEditCollection: Function}) {
     
     return (
         <article>
             <CAddCollectionForm onAddCollection={onAddCollection}/>
-            <h2>{masterCollection.name}</h2>
-            {Array.from(masterCollection.subCollections).map(([id, collection]) => {
-                return <CShelfDisplay key={id} location={location} collection={collection} onChangeLocation={onChangeLocation} onRemoveCollection={onRemoveCollection} onEditCollection={onEditCollection}/>
+            <h2>{master.name}</h2>
+            {master.subCollections.map((id) => {
+                let collection = collections.get(id);
+                if(collection)return <CShelfDisplay key={id} items = {items} location={location} collection={collection} onChangeLocation={onChangeLocation} onRemoveCollection={onRemoveCollection} onEditCollection={onEditCollection}/>
             })}
         </article>
     );

@@ -8,14 +8,16 @@ export interface IItemIdentity {
     year: string,
     imageURL: string,
     author: string,
+    parented: number
 }
 
 export interface ICollection {
     name: string
     description: string
     id: string
-    items: Map<string, IItemIdentity>  
-    subCollections: Map<string, ICollection>
+    parented: number;
+    items: Array<string>  
+    subCollections: Array<string>
 }
 
 export interface ILibrary {

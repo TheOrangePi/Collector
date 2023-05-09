@@ -16,6 +16,7 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { Library } from './library';
 import { ICollection } from 'main/defintions/LibraryModel';
+import FileStore from './filestore';
 
 class AppUpdater {
   constructor() {
@@ -26,22 +27,12 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
-const library : Library = new Library();
-library.AddCollection("0", {name: "My Fav Movies", description: "A List of really Good Movies that we should watch"});
-library.AddCollection("0", {name: "Cool Books", description:"......"});
-library.AddCollection("0", {name: "Awesome Boardgames", description:"Need to find the time to play these"})
-let collections = library.GetCollections();
-let i = 0;
-// Array.from(collections).map(([id, collection] )=> {
-//   for(let j = 0; j< 15; j++){
-//     collection.AddItem(`Item ${i++}`);
-//   }
-// });
-// ipcMain.on('ipc-example', async (event, arg) => {
-//   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-//   console.log(msgTemplate(arg));
-//   event.reply('ipc-example', msgTemplate('pong'));
-// });
+
+
+const library : Library = new Library(new FileStore(path.join(__dirname, '../../assets/libraryStore.json')));
+
+
+
 
 Object.entries(library.actions).map(([event, action])=> {
   ipcMain.handle(event, (event, instruction) =>{
