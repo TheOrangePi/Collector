@@ -7,7 +7,7 @@ export default class BookDB implements IDB {
     
     constructor() {
         this.apiDestination = "https://www.googleapis.com/books/"
-        this.apiKey = 
+        this.apiKey = "";
     }
 
     SearchBooks (searchTerms: string[]) {

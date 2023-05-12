@@ -72,7 +72,6 @@ export default function CLibraryDoor() {
 
         window.library.CRUDLibrary(Operation.CREATE, location[location.length-1], {id:id, name:name, description:description}).then((response: any) => {
             if(response){
-                console.log(response);
                 let newCollections = new Map(collections);
                 newCollections.set(response.collection.id, response.collection);
                 newCollections.set(response.different.id, response.different);
@@ -87,7 +86,6 @@ export default function CLibraryDoor() {
     function handleRemoveCollection(id: string) {
         window.library.CRUDLibrary(Operation.DELETE, location[location.length-1], id).then((response: any) => {
             if(response){
-                console.log(response)
                 let newCollections = new Map(collections);
                 newCollections.set(response.collection.id, response.collection);
                 if(response.different.parented <= 0) {
@@ -121,19 +119,38 @@ export default function CLibraryDoor() {
         })
     }
 
-    function handleAddItem(collectionId :string, itemId : string, itemType : ItemTypes, name:string, imageURL:string, author:string, year:string, onValidate: Function){
-        // window.library.CRUDItem(Operation.CREATE, collectionId, {itemId, itemType, name, imageURL, author, year}).then((response:any) => {
-        //     if(response){
-        //         let newMaster = Object.assign({}, masterCollection)
-        //         let currentCollection = FollowPath(newMaster, location)
-        //         let addedItem : IItemIdentity = response;
-        //         currentCollection.items.set(addedItem.id, addedItem);
-        //         setMasterCollection(newMaster);
-        //         onValidate(true);
-        //     }else {
-        //         onValidate(false); 
-        //     }         
-        // })
+    function handleAddItem(itemId : string, itemType : ItemTypes, name:string, imageURL:string, author:string, year:string, onValidate: Function){
+        window.library.CRUDItem(Operation.CREATE, location[location.length-1], {itemId, itemType, name, imageURL, author, year}).then((response:any) => {
+            if(response){
+                let newItems = new Map(items);
+                let newCollections = new Map(collections);
+                newCollections.set(response.collection.id, response.collection);
+                newItems.set(response.different.id, response.different);
+                setCollections(newCollections);
+                setItems(newItems);
+                onValidate(true);
+            }else {
+                onValidate(false);
+            }         
+        })
+    }
+
+    function handleRemoveItem(itemId : string) {
+        window.library.CRUDItem(Operation.DELETE, location[location.length-1], itemId).then((response:any) => {
+            if(response){
+                let newItems = new Map(items);
+                let newCollections = new Map(collections);
+                newCollections.set(response.collection.id, response.collection);
+                if(response.different.parented <= 0) {
+                    newItems.delete(response.different.id);
+                } else {
+                    newItems.set(response.different.id, response.different);
+                }
+                setCollections(newCollections);
+                setItems(newItems);
+            }else {
+            }       
+        })
     }
 
     //View Management
@@ -156,7 +173,7 @@ export default function CLibraryDoor() {
                 setError(`At Empty Shelf. ${JSON.stringify(location)}`);
                 break;
             }
-            component = <CShelf collection={currentCollection} collections={collections} items={items} onChangeLocation={handleChangeLocation} location={location} onSearch={handleSearch}onRemoveCollection={handleRemoveCollection} onEditCollection={handleEditCollection} onAddCollection={handleAddCollection} onAddItem={handleAddItem} />
+            component = <CShelf collection={currentCollection} collections={collections} items={items} onChangeLocation={handleChangeLocation} location={location} onSearch={handleSearch}onRemoveCollection={handleRemoveCollection} onEditCollection={handleEditCollection} onAddCollection={handleAddCollection} onAddItem={handleAddItem} onRemoveItem={handleRemoveItem} />
             break;
         case View.LIBRARY:
             if(master == undefined) {

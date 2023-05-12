@@ -43,17 +43,6 @@ class Collection implements ICollection {
         this.subCollections = new Array();
         this.parented = 0;
     }   
-
-//     AddItem({itemId, itemType, name, imageURL, author, year}: {itemId : string, itemType : ItemTypes, name :string, imageURL :string, author :string, year :string} ) :  IItemIdentity |undefined{
-//         let id = `${itemType}-${itemId}`;
-//         let index = this.items.findIndex((value) => {return id === value})
-//         if(index === -1) {
-//             let item = new Item(name, id, itemType, imageURL, author, year);
-//             this.items.push(id);
-//         }       
-//         return this.items[]
-//     }
-
 }
 
 export class Library implements ILibrary{
@@ -62,7 +51,7 @@ export class Library implements ILibrary{
     items: Map<string, Item>
     actions: {[event: string] : (instruction: any)=> any} = {
         ["CRUDLibrary"]: ({operation, collectionId, arg}:{operation: Operation, collectionId : string, arg:any})=> this.CRUDCollection(operation, collectionId, arg),
-        ["SearchLibrary"] : ({itemType, searchTerm, onResultsFound} : {itemType: ItemTypes, searchTerm: string, onResultsFound: Function}) => this.SearchLibrary(itemType, searchTerm, onResultsFound),
+        ["SearchLibrary"] : ({itemType, searchTerm} : {itemType: ItemTypes, searchTerm: string}) => this.SearchLibrary(itemType, searchTerm),
         ["CRUDItem"] : ({operation, collectionId, arg}:{operation: Operation, collectionId:string, arg:any})=> this.CRUDItem(operation, collectionId, arg),
     };
 
@@ -86,7 +75,7 @@ export class Library implements ILibrary{
     }
 
 
-    SearchLibrary(itemType: ItemTypes, searchTerm: string , onResultsFound: Function) {
+    SearchLibrary(itemType: ItemTypes, searchTerm: string) {
         let searchTerms : Array<string> = searchTerm.split(' ');
         switch(itemType){
             case ItemTypes.BOOK:
@@ -96,20 +85,27 @@ export class Library implements ILibrary{
     }
 
     CRUDItem(operation: Operation, collectionId:string, arg:any) {
+        console.log(arg);
         let collection = this.collections.get(collectionId);
         if(collection) {
+            let different;
             switch(operation) {
                 case Operation.CREATE:
-                   //let added = collection.AddItem(arg);
-                   this.SignalStateChange();
-                  // return added;
+                    different = this.AddItem(collection, arg);
+                    this.SignalStateChange();
+                    break;
                 case Operation.READ:
                   return
                 case Operation.UPDATE:
                     return
                 case Operation.DELETE:
-                    return
+                    different = this.RemoveItem(collection, arg);
+                    this.SignalStateChange();
+                    break;
             }
+            
+            return {collection: collection, different:different};
+
         } 
         throw new Error(`collection ${collectionId} does not exist when CRUD Item`)
     }
@@ -121,7 +117,7 @@ export class Library implements ILibrary{
             let different = undefined;
             switch(operation){
                 case Operation.CREATE:
-                    different = this.AddCollection(collectionId, arg);
+                    different = this.AddCollection(collection, arg);
                     this.SignalStateChange();
                     break;
                 case Operation.READ:
@@ -131,19 +127,32 @@ export class Library implements ILibrary{
                     this.SignalStateChange();
                     break;
                 case Operation.DELETE:
-                    different = this.RemoveCollection(collectionId, arg);
+                    different = this.RemoveCollection(collection, arg);
                     this.SignalStateChange(); 
                     break;              
             }
             return {collection: collection, different:different};
-        }
-
-        
-       
+        }       
     }
 
-    AddCollection(collectionId: string, {id, name, description}:{id :string |undefined,name: string, description: string} ): ICollection {
+    AddItem(parentCollection: Collection, {itemId, itemType, name, imageURL, author, year}: {itemId : string, itemType : ItemTypes, name :string, imageURL :string, author :string, year :string} ) :  IItemIdentity |undefined{
+        let id = `${itemType}-${itemId}`;
+        let item = this.items.get(id);
+        if(item == undefined) {
+            item = new Item(name, id, itemType, imageURL,author, year);
+            this.items.set(id, item);
+        }
 
+        let index = parentCollection.items.findIndex((value) => {return id === value})
+        if(index === -1) {
+            parentCollection.items.push(id);
+            item.parented++;
+        }
+       
+        return item;
+    }
+
+    AddCollection(parentCollection: Collection, {id, name, description}:{id :string |undefined,name: string, description: string} ): ICollection {
         let collection = undefined;
         if(id !== undefined){ // the collection exists already
             collection = this.collections.get(id)    
@@ -155,7 +164,7 @@ export class Library implements ILibrary{
         }        
         // enusre the collection is added to its parent collection
         collection.parented++;
-        this.collections.get(collectionId)?.subCollections.push(id);
+        parentCollection.subCollections.push(id);
         return collection;
      }   
      
@@ -176,15 +185,13 @@ export class Library implements ILibrary{
         }
         return collection;
     }
-///Not that this doesn't remove it from the collections entity. May be a problemt has can;t ever actully delete collections.
-    RemoveCollection(collectionId: string, id:string){
-        let collection : ICollection | undefined = this.collections.get(collectionId);
-        if(collection === undefined) return;
-        let index = collection.subCollections.findIndex((value) => {
+
+    RemoveCollection(parentCollection: Collection, id:string){
+        let index = parentCollection.subCollections.findIndex((value) => {
             return value == id;
         });
         if(index === -1) return;
-        let deletedIdArr = collection.subCollections.splice(index,1);
+        let deletedIdArr = parentCollection.subCollections.splice(index,1);
         let deletedId = deletedIdArr[0];
         let deleted = this.collections.get(deletedId);
         if(deleted) {
@@ -194,6 +201,22 @@ export class Library implements ILibrary{
 
         return deleted;
 
+    }
+
+    RemoveItem(parentCollection: Collection, id: string) {
+        let index = parentCollection.items.findIndex((value) => {
+            return value == id;
+        });
+        if(index === -1) return;
+        let deletedIdArr = parentCollection.items.splice(index,1);
+        let deletedId = deletedIdArr[0];
+        let deleted = this.items.get(deletedId);
+        if(deleted) {
+            deleted.parented--;
+            if(deleted.parented <= 0) this.items.delete(deletedId);
+        }
+
+        return deleted;
     }
 
     SignalStateChange() {

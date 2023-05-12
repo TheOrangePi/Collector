@@ -1,7 +1,7 @@
 import { ICollection, IItemIdentity } from "main/defintions/LibraryModel";
 import React from "react";
 import { CShelfDisplay } from "./Displays";
-import { CAddCollectionForm } from "./Forms";
+import { CAddCollectionForm } from "./CollectionForms";
 
 
 
