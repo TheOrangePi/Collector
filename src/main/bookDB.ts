@@ -7,7 +7,7 @@ export default class BookDB implements IDB {
     
     constructor() {
         this.apiDestination = "https://www.googleapis.com/books/"
-        this.apiKey = "AIzaSyA08Iae7QAottAhXaashYxmh0418j2tEWM"
+        this.apiKey = 
     }
 
     SearchBooks (searchTerms: string[]) {
@@ -23,12 +23,12 @@ export default class BookDB implements IDB {
                     for(let i = 0; i < returned; i++) {
                         let book = results.items[i];
                         let id = book.id
-                        let source = ItemTypes.BOOK;
+                        let itemType = ItemTypes.BOOK;
                         let title = book.volumeInfo?.title;
                         let author = book.volumeInfo?.authors?.join(' & ');
                         let year = book.volumeInfo?.publishedDate?.split("-")[0]
                         let imageURL = book.volumeInfo?.imageLinks?.smallThumbnail;
-                        items[i] = {id, source, title, author, year, imageURL}
+                        items[i] = {id, itemType, title, author, year, imageURL}
                     }
 
                     resolve(items);
