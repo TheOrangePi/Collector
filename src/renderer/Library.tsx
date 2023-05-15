@@ -1,11 +1,11 @@
-import { ICollection, IItemIdentity } from "main/defintions/LibraryModel";
+import { ICollection, IItem } from "main/defintions/LibraryModel";
 import React from "react";
 import { CShelfDisplay } from "./Displays";
 import { CAddCollectionForm } from "./CollectionForms";
 
 
 
-export default function CLibrary({master, collections, items, onChangeLocation, location, onAddCollection, onRemoveCollection, onEditCollection} : {master: ICollection,collections: Map<string,ICollection>, items: Map<string, IItemIdentity>, onChangeLocation: Function, location:string[], onAddCollection: Function, onRemoveCollection: Function, onEditCollection: Function}) {
+export default function CLibrary({master, collections, items, onChangeLocation, location, onAddCollection, onRemoveCollection, onEditCollection} : {master: ICollection,collections: Map<string,ICollection>, items: Map<string, IItem>, onChangeLocation: Function, location:string[], onAddCollection: Function, onRemoveCollection: Function, onEditCollection: Function}) {
     
     return (
         <article>

@@ -1,12 +1,12 @@
 import { ItemTypes } from "main/defintions/ItemTypes.e";
-import { ICollection, IItemIdentity } from "main/defintions/LibraryModel";
+import { ICollection, IItem, ISearchItem } from "main/defintions/LibraryModel";
 import React from "react";
 
-function CSearchedItem({existsInCollection, collectionId, itemId, itemType, name, imageURL, author, year, onAddItem} : { existsInCollection:boolean, collectionId : string, itemId: string, name:string, itemType: ItemTypes, imageURL: string, author: Array<string>, year: string, onAddItem: Function}){
+function CSearchedItem({existsInCollection, collectionId, searchItemDetails, onSelectItem} : { existsInCollection:boolean, collectionId : ICollection, searchItemDetails: ISearchItem, onSelectItem: Function}){
     
     function handleValidate(success: boolean | undefined){
         if(success) {
-            let itemAddButton = document.getElementById(`${itemId}-addbutton`);
+            let itemAddButton = document.getElementById(`a${searchItemDetails.id}-addbutton`);
             if(itemAddButton){
                 SetButtonStatus(true);
             }
@@ -14,7 +14,7 @@ function CSearchedItem({existsInCollection, collectionId, itemId, itemType, name
     }
 
     function SetButtonStatus(added: boolean){
-        let itemAddButton = document.getElementById(`${itemId}-addbutton`);
+        let itemAddButton = document.getElementById(`a${searchItemDetails.id}-addbutton`);
         if(added && itemAddButton){
             itemAddButton.classList.remove("btn-outline-secondary");
             itemAddButton.classList.add("btn-success");
@@ -30,20 +30,18 @@ function CSearchedItem({existsInCollection, collectionId, itemId, itemType, name
 
     return (
         <div className="card col-6">
-            <img src={imageURL} className="card-img-top"/>
+            <img src={searchItemDetails.thumbnailURL} className="card-img-top"/>
             <div className="card-body">
-            <h6 className="card-title">{name}</h6>
-            <p className="card-subtitle">{author}</p>
-            <p>{year}</p>
+            <h6 className="card-title">{searchItemDetails.name}</h6>
             </div>
             <div className="card-footer">
-                <button id={`${itemId}-addbutton`} className={`btn btn-sm${existsInCollection? "btn-success" : "btn-outline-secondary"}`} disabled={existsInCollection} onClick={() => {onAddItem(itemId, itemType, name, imageURL, author, year, handleValidate)}}>{existsInCollection? "U+2714" : "Add"}</button>
+                <button id={`a${searchItemDetails.id}-addbutton`} className={`btn btn-sm${existsInCollection? "btn-success" : "btn-outline-secondary"}`} disabled={existsInCollection} onClick={() => {onSelectItem(searchItemDetails, handleValidate)}}>{existsInCollection? "U+2714" : "Add"}</button>
             </div>
         </div>
     )
 }
 
-export function CAddItemForm({collection, onSearch, onAddItem}: {collection: ICollection, onSearch: Function, onAddItem:Function}) {
+export function CAddItemForm({collection, onSearch, onSelectItem}: {collection: ICollection, onSearch: Function, onSelectItem:Function}) {
     let [itemType, setItemType] = React.useState(ItemTypes.BOOK)
     let [searchTerm, setSearchTerm] = React.useState('');
     let [resultItems, setResultItems] = React.useState<any[]>([]);
@@ -77,16 +75,15 @@ export function CAddItemForm({collection, onSearch, onAddItem}: {collection: ICo
                     <ul className="dropdown-menu">
                         <li><a className="dropdown-item" onClick={()=> {setItemType(ItemTypes.BOOK)}} href="#">Books</a></li>
                         <li><a className="dropdown-item" onClick={()=> {setItemType(ItemTypes.MOVIETV)}} href="#">Movies/TV</a></li>
-                        <li><a className="dropdown-item" onClick={()=> {setItemType(ItemTypes.BOARDGAME)}} href="#">Boardgames</a></li>                        
+                        <li><a className="dropdown-item" onClick={()=> {setItemType(ItemTypes.TABLETOPGAME)}} href="#">Boardgames</a></li>                        
                         <li><a className="dropdown-item" onClick={()=> {setItemType(ItemTypes.VIDEOGAME)}} href="#">Videogames</a></li>
-                        <li><a className="dropdown-item" onClick={()=> {setItemType(ItemTypes.TTRPG)}} href="#">TTRPGs</a></li>
                     </ul>
                 </div>
                 <div className="scrollable row">
-                {resultItems.map(({id, itemType, title, author, year, imageURL }, index) => {
+                {resultItems.map((searchItemDetails, index) => {
                     let existsInCollection = collection.items.find((id) => {
                         return id === `${itemType}-${id}`}) !== undefined;
-                    return <CSearchedItem key={index} existsInCollection={existsInCollection} collectionId={collection.id} itemId={id} itemType={itemType} name={title} imageURL={imageURL} author={author} year={year} onAddItem={onAddItem}/>
+                    return <CSearchedItem key={index} existsInCollection={existsInCollection} collectionId={collection} searchItemDetails={searchItemDetails} onSelectItem={onSelectItem}/>
             })}
                 </div>
             </div>
@@ -95,7 +92,7 @@ export function CAddItemForm({collection, onSearch, onAddItem}: {collection: ICo
     )
 }
 
-export function CConfirmDeleteItem({item, onRemoveItem} : {item: IItemIdentity, onRemoveItem: Function }) {
+export function CConfirmDeleteItem({item, onRemoveItem} : {item: IItem, onRemoveItem: Function }) {
     return (
         <div className="modal fade" id={`r${item.id}-removeModal`} data-bs-backdrop="static" data-bs-keyboard="false" tabIndex={-1} aria-labelledby={`r${item.id}-removeModalLabel`} aria-hidden="true">
             <div className="modal-dialog">

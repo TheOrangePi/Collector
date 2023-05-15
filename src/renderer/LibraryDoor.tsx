@@ -1,7 +1,7 @@
 import * as React from "react";
 //import { useMediaQuery } from 'react-responsive';
 //const isMobile = useMediaQuery({ query: `(max-width: 760px)` }); //needto move in function
-import { ICollection, IItemIdentity } from "main/defintions/LibraryModel";
+import { ICollection, IItem, ISearchItem } from "main/defintions/LibraryModel";
 import CLibrary from "./Library";
 import CShelf from "./Shelf";
 import CBook from "./Book";
@@ -18,7 +18,7 @@ import { ItemTypes } from "main/defintions/ItemTypes.e";
 //     return FollowPath(childCollection, location, start);
 // }
 
-function CLibraryMap({collections, items, location, onChangeLocation} : {collections: Map<string,ICollection>, items:Map<string, IItemIdentity>, location: Array<string>, onChangeLocation: Function}){   
+function CLibraryMap({collections, items, location, onChangeLocation} : {collections: Map<string,ICollection>, items:Map<string, IItem>, location: Array<string>, onChangeLocation: Function}){   
     return(
         <nav className="nav">
             <ol className="breadcrumb" aria-label="breadcrumb">
@@ -119,8 +119,18 @@ export default function CLibraryDoor() {
         })
     }
 
-    function handleAddItem(itemId : string, itemType : ItemTypes, name:string, imageURL:string, author:string, year:string, onValidate: Function){
-        window.library.CRUDItem(Operation.CREATE, location[location.length-1], {itemId, itemType, name, imageURL, author, year}).then((response:any) => {
+    function handleSelectItem(searchItemDetails: ISearchItem, onValidate: Function){
+        window.library.CRUDItem(Operation.READ, location[location.length-1], searchItemDetails).then((response: any) => {
+            if(response) {
+                handleAddItem(response, onValidate);                
+            }else {
+                onValidate(false)
+            }
+        })
+    }
+
+    function handleAddItem(itemDetails: IItem, onValidate: Function){
+        window.library.CRUDItem(Operation.CREATE, location[location.length-1], itemDetails).then((response:any) => {
             if(response){
                 let newItems = new Map(items);
                 let newCollections = new Map(collections);
@@ -173,7 +183,7 @@ export default function CLibraryDoor() {
                 setError(`At Empty Shelf. ${JSON.stringify(location)}`);
                 break;
             }
-            component = <CShelf collection={currentCollection} collections={collections} items={items} onChangeLocation={handleChangeLocation} location={location} onSearch={handleSearch}onRemoveCollection={handleRemoveCollection} onEditCollection={handleEditCollection} onAddCollection={handleAddCollection} onAddItem={handleAddItem} onRemoveItem={handleRemoveItem} />
+            component = <CShelf collection={currentCollection} collections={collections} items={items} onChangeLocation={handleChangeLocation} location={location} onSearch={handleSearch}onRemoveCollection={handleRemoveCollection} onEditCollection={handleEditCollection} onAddCollection={handleAddCollection} onSelectItem={handleSelectItem} onRemoveItem={handleRemoveItem} />
             break;
         case View.LIBRARY:
             if(master == undefined) {

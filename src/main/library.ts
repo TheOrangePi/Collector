@@ -1,33 +1,43 @@
-import { ICollection, IItemIdentity, ILibrary } from "main/defintions/LibraryModel"
+import { IChildThing, ICollection, IItem, ILibrary, ISearchItem } from "main/defintions/LibraryModel"
 import {Operation} from "./defintions/Operations.e"
 import { nanoid } from "nanoid";
 import { ItemTypes } from "./defintions/ItemTypes.e";
 import BookDB from "./bookDB";
 import { library } from "webpack";
 import FileStore from "./filestore";
+import MovieDB from "./movieDB";
+import VideoGameDB from "./videogameDB";
+import TableTopDB from "./tabletopDB";
 
-class Item implements IItemIdentity {
+class Item implements IItem, IChildThing {
     id: string;
     name: string;
     parented: number;
     itemType: ItemTypes;
     year: string;
-    imageURL: string;
-    author: string;
+    author: Array<string>;
+    thumbnailURL: string;
+    bannerURL: string;
+    description: string;
+    genres: Array<string>
 
-    constructor(name: string, id: string, itemType: ItemTypes, imageURL: string, author: string, year:string) {
+    constructor({name, id, itemType, thumbnailURL, bannerURL, author, year, description, genres} : IItem) {
         this.name = name;
         this.id = id;
         this.itemType = itemType;
-        this.imageURL = imageURL;
+        this.thumbnailURL = thumbnailURL;
+        this.bannerURL = bannerURL;
         this.author = author;
+        this.description = description;
         this.year = year;
         this.parented = 0;
+        this.genres = genres;
     }
+    
    
 }
 
-class Collection implements ICollection {
+class Collection implements ICollection , IChildThing {
     name: string;
     description: string;
     id: string;
@@ -58,9 +68,16 @@ export class Library implements ILibrary{
     libraryStore: FileStore;
 
     bookDB : BookDB;
+    movieDB : MovieDB;
+    videogameDB: VideoGameDB;
+    tabletopDB: TableTopDB;
 
-    constructor(libraryStore: FileStore){
-        this.bookDB = new BookDB();
+    constructor(libraryStore: FileStore, api: any){
+        this.bookDB = new BookDB(api.books);
+        this.movieDB = new MovieDB(api.moviestv);
+        this.videogameDB = new VideoGameDB(api.videogames);
+        this.tabletopDB = new TableTopDB(api.tabletopgames);
+
         this.libraryStore = libraryStore;
         let loadedLibrary = libraryStore.LoadJSON();
         this.items = new Map(loadedLibrary.items) ?? new Map();
@@ -79,13 +96,20 @@ export class Library implements ILibrary{
         let searchTerms : Array<string> = searchTerm.split(' ');
         switch(itemType){
             case ItemTypes.BOOK:
-                return this.bookDB.SearchBooks(searchTerms);
+                return this.bookDB.Search(searchTerms);
+            case ItemTypes.MOVIETV:
+                return this.movieDB.Search(searchTerms);
+            case ItemTypes.VIDEOGAME:
+                return this.videogameDB.Search(searchTerms);
+            case ItemTypes.TABLETOPGAME:
+                return this.tabletopDB.Search(searchTerms);
+            default:
+                throw new Error("Undefined Item type in searchLibrary")
         }
 
     }
 
     CRUDItem(operation: Operation, collectionId:string, arg:any) {
-        console.log(arg);
         let collection = this.collections.get(collectionId);
         if(collection) {
             let different;
@@ -95,9 +119,9 @@ export class Library implements ILibrary{
                     this.SignalStateChange();
                     break;
                 case Operation.READ:
-                  return
+                    return different = this.GetItem(arg);
                 case Operation.UPDATE:
-                    return
+                    break;
                 case Operation.DELETE:
                     different = this.RemoveItem(collection, arg);
                     this.SignalStateChange();
@@ -135,11 +159,12 @@ export class Library implements ILibrary{
         }       
     }
 
-    AddItem(parentCollection: Collection, {itemId, itemType, name, imageURL, author, year}: {itemId : string, itemType : ItemTypes, name :string, imageURL :string, author :string, year :string} ) :  IItemIdentity |undefined{
-        let id = `${itemType}-${itemId}`;
+    AddItem(parentCollection: Collection, itemDetails: IItem ) :  IItem |undefined{
+        let id = `${itemDetails.itemType}-${itemDetails.id}`;
         let item = this.items.get(id);
         if(item == undefined) {
-            item = new Item(name, id, itemType, imageURL,author, year);
+            itemDetails.id = id;
+            item = new Item(itemDetails);
             this.items.set(id, item);
         }
 
@@ -172,6 +197,21 @@ export class Library implements ILibrary{
         return {master: this.masterCollection, collections: this.collections, items: this.items};
     }
 
+    GetItem(searchDetails: ISearchItem) {
+        switch(searchDetails.itemType){
+            case ItemTypes.BOOK:
+                return this.bookDB.GetDetailed(searchDetails.id);
+            case ItemTypes.MOVIETV:
+                return this.movieDB.GetDetailed(searchDetails.id);
+            case ItemTypes.VIDEOGAME:
+                return this.videogameDB.GetDetailed(searchDetails.id);
+            case ItemTypes.TABLETOPGAME:
+                return this.tabletopDB.GetDetailed(searchDetails.id);
+            default:
+                throw new Error("Undefined ItemType in GetItem");
+        }
+    }
+
     UpdateCollection({id, name, description} : {id:string, name:string | undefined, description: string |undefined}): ICollection |undefined {
         let collection = this.collections.get(id);
         if(collection == undefined){
@@ -196,7 +236,16 @@ export class Library implements ILibrary{
         let deleted = this.collections.get(deletedId);
         if(deleted) {
             deleted.parented--;
-            if(deleted.parented <= 0) this.collections.delete(deletedId);
+            if(deleted.parented <= 0) {
+                for(let subItem of deleted.items){
+                    this.RemoveItem(deleted, subItem);
+                }
+                for(let subCol of deleted.subCollections){
+                    this.RemoveCollection(deleted, subCol);
+                }
+                this.collections.delete(deletedId);
+
+            }
         }
 
         return deleted;

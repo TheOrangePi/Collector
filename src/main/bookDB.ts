@@ -1,16 +1,42 @@
 import { ItemTypes } from "./defintions/ItemTypes.e";
+import { IItem, ISearchItem } from "./defintions/LibraryModel";
 
 
 export default class BookDB implements IDB {
     apiDestination: string;
     apiKey: string;
+    apiType: ItemTypes;
     
-    constructor() {
-        this.apiDestination = "https://www.googleapis.com/books/"
-        this.apiKey = "";
+    constructor({key, destination}: {key:string, destination:string}) {
+        this.apiDestination = destination;
+        this.apiKey = key;
+        this.apiType = ItemTypes.BOOK;
     }
 
-    SearchBooks (searchTerms: string[]) {
+    GetDetailed(id: string){
+        let dbid = id;
+        console.log(dbid);
+        let url = `${this.apiDestination}v1/volumes/${dbid}?key=${this.apiKey}`;
+        console.log(url);
+        return new Promise((resolve, reject) => {
+            fetch(url).then((response) => {
+                response.json().then((result) => {
+                    let name = result.volumeInfo?.title;
+                    let thumbnailURL = result.volumeInfo?.imageLinks?.thumbnail;
+                    let bannerURL = result.volumeInfo?.imageLinks?.small;
+                    let year = result.volumeInfo?.publishedDate?.split("-")[0];
+                    let author = result.volumeInfo?.authors;
+                    let description = result.volumeInfo?.description;
+                    let genres = result.volumeInfo?.categories;
+                    let itemType = ItemTypes.BOOK;
+                    let item : IItem = {id, itemType, name, thumbnailURL, bannerURL, year, author, description, genres}
+                    resolve(item);
+                });
+            });
+        });
+    }
+
+    Search(searchTerms: string[]) {
         let startIndex = 0; //this is for pagination of results if wanted.
         let maxResults = 40;
         let searchString = searchTerms.join("+");
@@ -19,18 +45,15 @@ export default class BookDB implements IDB {
             fetch(url).then((response) => {
                 response.json().then((results) => {
                     let returned = results.items.length;
-                    let items = Array(returned);
+                    let items = Array<ISearchItem>(returned);
                     for(let i = 0; i < returned; i++) {
                         let book = results.items[i];
                         let id = book.id
-                        let itemType = ItemTypes.BOOK;
-                        let title = book.volumeInfo?.title;
-                        let author = book.volumeInfo?.authors?.join(' & ');
-                        let year = book.volumeInfo?.publishedDate?.split("-")[0]
-                        let imageURL = book.volumeInfo?.imageLinks?.smallThumbnail;
-                        items[i] = {id, itemType, title, author, year, imageURL}
+                        let itemType = this.apiType;
+                        let name = book.volumeInfo?.title;
+                        let thumbnailURL = book.volumeInfo?.imageLinks?.thumbnail;
+                        items[i] = {id, itemType, name, thumbnailURL}
                     }
-
                     resolve(items);
                 });
             });

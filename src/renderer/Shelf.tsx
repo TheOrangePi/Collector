@@ -1,5 +1,5 @@
 import { ItemTypes } from "main/defintions/ItemTypes.e";
-import { ICollection, IItemIdentity } from "main/defintions/LibraryModel";
+import { ICollection, IItem } from "main/defintions/LibraryModel";
 import React from "react";
 import { CItemDisplay, CShelfDisplay } from "./Displays";
 import { CAddCollectionForm } from "./CollectionForms";
@@ -9,11 +9,11 @@ import { CAddItemForm } from "./ItemForms";
 
 
 
-export default function CShelf({collection, collections, items, onChangeLocation, location, onSearch, onAddItem, onRemoveCollection, onRemoveItem, onEditCollection, onAddCollection}: {collection: ICollection, collections: Map<string, ICollection>, items: Map<string, IItemIdentity>, onChangeLocation: Function, location:string[], onSearch: Function, onAddItem: Function, onRemoveItem:Function, onEditCollection: Function, onRemoveCollection: Function, onAddCollection:Function}) {
+export default function CShelf({collection, collections, items, onChangeLocation, location, onSearch, onSelectItem, onRemoveCollection, onRemoveItem, onEditCollection, onAddCollection}: {collection: ICollection, collections: Map<string, ICollection>, items: Map<string, IItem>, onChangeLocation: Function, location:string[], onSearch: Function, onSelectItem: Function, onRemoveItem:Function, onEditCollection: Function, onRemoveCollection: Function, onAddCollection:Function}) {
     return (
         <article>
             <CAddCollectionForm collections={collections} onAddCollection={onAddCollection}/>
-            <CAddItemForm onAddItem={onAddItem} collection={collection} onSearch={onSearch}/>
+            <CAddItemForm onSelectItem={onSelectItem} collection={collection} onSearch={onSearch}/>
             <h2>{collection.name}</h2>
             <div className="row">
             {collection.items.map((id) => {

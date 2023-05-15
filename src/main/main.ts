@@ -28,8 +28,11 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
+const keyStore = new FileStore(path.join(__dirname, '../../assets/keys.json'));
+const keys =  keyStore.LoadJSON();
+const fileStore = new FileStore(path.join(__dirname, '../../assets/libraryStore.json'));
 
-const library : Library = new Library(new FileStore(path.join(__dirname, '../../assets/libraryStore.json')));
+const library : Library = new Library(fileStore, keys);
 
 
 

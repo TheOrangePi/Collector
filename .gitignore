@@ -28,4 +28,4 @@ npm-debug.log.*
 *.sass.d.ts
 *.scss.d.ts
 #keys
-assets/.keys.json
+assets/keys.json
