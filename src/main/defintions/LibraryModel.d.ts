@@ -4,6 +4,11 @@ export interface IChildThing {
     parented: number
 }
 
+export interface IEngagement {
+    date: Date,
+    comment:string
+}
+
 export interface ISearchItem {
     id: string,
     name: string,
@@ -20,7 +25,14 @@ export interface IItem {
     bannerURL: string,
     description: string,
     author: Array<string>,
-    genres: Array<string>,    
+    genres: Array<string>,  
+
+    owned: boolean,
+    wishlisted: boolean,
+    favourite: boolean,
+    engagement: Array<IEngagement>
+
+
 }
 
 export interface ICollection {

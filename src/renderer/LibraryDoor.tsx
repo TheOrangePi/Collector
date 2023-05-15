@@ -1,7 +1,7 @@
 import * as React from "react";
 //import { useMediaQuery } from 'react-responsive';
 //const isMobile = useMediaQuery({ query: `(max-width: 760px)` }); //needto move in function
-import { ICollection, IItem, ISearchItem } from "main/defintions/LibraryModel";
+import { ICollection, IEngagement, IItem, ISearchItem } from "main/defintions/LibraryModel";
 import CLibrary from "./Library";
 import CShelf from "./Shelf";
 import CBook from "./Book";
@@ -70,7 +70,7 @@ export default function CLibraryDoor() {
 
     function handleAddCollection(id: string|undefined, name: string, description: string, onValidate: Function){
 
-        window.library.CRUDLibrary(Operation.CREATE, location[location.length-1], {id:id, name:name, description:description}).then((response: any) => {
+        window.library.CRUDLibrary(Operation.CREATE, location[location.length-2], {id:id, name:name, description:description}).then((response: any) => {
             if(response){
                 let newCollections = new Map(collections);
                 newCollections.set(response.collection.id, response.collection);
@@ -145,6 +145,16 @@ export default function CLibraryDoor() {
         })
     }
 
+    function handleUpdateItem(id: string, wishlist: boolean | undefined, favourite : boolean | undefined, owned : boolean | undefined, engagement : IEngagement | undefined) {
+        window.library.CRUDItem(Operation.UPDATE, location[location.length-2], {id, wishlist, favourite, owned, engagement}).then((response: any) => {
+            if(response) {
+                let newItems = new Map(items);
+                newItems.set(response.different.id , response.different);
+                setItems(newItems); 
+            }
+        })
+    }
+
     function handleRemoveItem(itemId : string) {
         window.library.CRUDItem(Operation.DELETE, location[location.length-1], itemId).then((response:any) => {
             if(response){
@@ -175,7 +185,7 @@ export default function CLibraryDoor() {
                 setError(`At Empty Book. ${JSON.stringify(location)}`);
                 break;
             }
-            component = <CBook item={currentItem}/>
+            component = <CBook item={currentItem} onUpdateItem={handleUpdateItem}/>
             break;
         case View.SHELF:
             if(currentCollection == undefined) {

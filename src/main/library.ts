@@ -1,4 +1,4 @@
-import { IChildThing, ICollection, IItem, ILibrary, ISearchItem } from "main/defintions/LibraryModel"
+import { IChildThing, ICollection, IEngagement, IItem, ILibrary, ISearchItem } from "main/defintions/LibraryModel"
 import {Operation} from "./defintions/Operations.e"
 import { nanoid } from "nanoid";
 import { ItemTypes } from "./defintions/ItemTypes.e";
@@ -20,6 +20,10 @@ class Item implements IItem, IChildThing {
     bannerURL: string;
     description: string;
     genres: Array<string>
+    owned: boolean;
+    wishlisted: boolean ;
+    favourite: boolean;
+    engagement: IEngagement[];
 
     constructor({name, id, itemType, thumbnailURL, bannerURL, author, year, description, genres} : IItem) {
         this.name = name;
@@ -32,9 +36,11 @@ class Item implements IItem, IChildThing {
         this.year = year;
         this.parented = 0;
         this.genres = genres;
-    }
-    
-   
+        this.wishlisted = false;
+        this.owned = false;
+        this.favourite = false;
+        this.engagement = new Array();
+    }   
 }
 
 class Collection implements ICollection , IChildThing {
@@ -121,6 +127,8 @@ export class Library implements ILibrary{
                 case Operation.READ:
                     return different = this.GetItem(arg);
                 case Operation.UPDATE:
+                    different = this.UpdateItem(arg);
+                    this.SignalStateChange();
                     break;
                 case Operation.DELETE:
                     different = this.RemoveItem(collection, arg);
@@ -224,6 +232,28 @@ export class Library implements ILibrary{
             collection.description = description;
         }
         return collection;
+    }
+
+    UpdateItem({id, wishlist, owned, favourite, engagement} : {id:string, wishlist: boolean, owned: boolean, favourite: boolean, engagement: IEngagement}){
+        let item = this.items.get(id);
+        if(item == undefined) {
+            return undefined;
+        }
+        if(wishlist !== undefined) {
+            item.wishlisted = wishlist;
+        }
+        if(owned !== undefined) {
+            item.owned = owned;
+        }
+        if(favourite !== undefined) {
+            item.favourite = favourite;
+        }
+        if(engagement !== undefined) {
+            console.log(item);
+            item.engagement.push(engagement);
+        }
+        return item;
+
     }
 
     RemoveCollection(parentCollection: Collection, id:string){
